@@ -7,7 +7,7 @@ class MessageDecode:
     def __len__(self):
         return len(self.buf)
 
-    def int(self):
+    def int_(self):
         res = 0
         i = 0
         while self.buf[self.pos] > 128:
@@ -18,8 +18,17 @@ class MessageDecode:
         self.pos += 1
         return res
 
+    @staticmethod
+    def hex_(n: int) -> list:
+        res = []
+        while n > 128:
+            res.append((n & 127) | 128)
+            n = n >> 7
+        res.append(n)
+        return res
+
     def bytes(self):
-        e = self.int()
+        e = self.int_()
         if e + self.pos > len(self.buf):
             raise Exception('长度不匹配')
         res = self.buf[self.pos:e + self.pos]
@@ -41,10 +50,10 @@ class MessageDecode:
         elif e == 1:
             self.skip(8)
         elif e == 2:
-            self.skip(self.int())
+            self.skip(self.int_())
         elif e == 3:
             while True:
-                e = 7 & self.int()
+                e = 7 & self.int_()
                 if 4 != e:
                     self.skipType(e)
         elif e == 5:
@@ -56,14 +65,14 @@ class MessageDecode:
         """只处理弹幕"""
         length = len(self)
         while self.pos < length:
-            t = self.int()
+            t = self.int_()
             tt = t >> 3
             if tt == 1:
-                self.message['payloadType'] = self.int()
+                self.message['payloadType'] = self.int_()
                 if self.message['payloadType'] != 310:  # 非弹幕
                     return False
             elif tt == 2:
-                self.message['compressionType'] = self.int()
+                self.message['compressionType'] = self.int_()
             elif tt == 3:
                 self.message['payload'] = self.bytes()
             else:
@@ -114,7 +123,7 @@ class MessageDecode:
         c = self.pos + l
         m = {}
         while self.pos < c:
-            t = self.int()
+            t = self.int_()
             tt = t >> 3
             if tt == 1:
                 m['principalId'] = self.string()
@@ -130,18 +139,18 @@ class MessageDecode:
         c = self.pos + l
         m = {}
         while self.pos < c:
-            t = self.int()
+            t = self.int_()
             tt = t >> 3
             if tt == 1:
                 m['id'] = self.string()
             elif tt == 2:
-                m['user'] = self.user_info_decode(self.buf, self.int())
+                m['user'] = self.user_info_decode(self.buf, self.int_())
             elif tt == 3:
                 m['content'] = self.string()
             elif tt == 4:
                 m['deviceHash'] = self.string()
             elif tt == 5:
-                m['sortRank'] = self.int()
+                m['sortRank'] = self.int_()
             elif tt == 6:
                 m['color'] = self.string()
             else:
@@ -152,38 +161,38 @@ class MessageDecode:
         c = self.pos + l
         m = {}
         while self.pos < c:
-            t = self.int()
+            t = self.int_()
             tt = t >> 3
             if tt == 1:
                 m['id'] = self.string()
             elif tt == 2:
-                m['user'] = self.user_info_decode(self.buf, self.int())
+                m['user'] = self.user_info_decode(self.buf, self.int_())
             elif tt == 3:
-                m['time'] = self.int()
+                m['time'] = self.int_()
             elif tt == 4:
-                m['giftId'] = self.int()
+                m['giftId'] = self.int_()
             elif tt == 5:
-                m['sortRank'] = self.int()
+                m['sortRank'] = self.int_()
             elif tt == 6:
                 m['mergeKey'] = self.string()
             elif tt == 7:
-                m['batchSize'] = self.int()
+                m['batchSize'] = self.int_()
             elif tt == 8:
-                m['comboCount'] = self.int()
+                m['comboCount'] = self.int_()
             elif tt == 9:
-                m['rank'] = self.int()
+                m['rank'] = self.int_()
             elif tt == 10:
-                m['expireDuration'] = self.int()
+                m['expireDuration'] = self.int_()
             elif tt == 11:
-                m['clientTimestamp'] = self.int()
+                m['clientTimestamp'] = self.int_()
             elif tt == 12:
-                m['slotDisplayDuration'] = self.int()
+                m['slotDisplayDuration'] = self.int_()
             elif tt == 13:
-                m['starLevel'] = self.int()
+                m['starLevel'] = self.int_()
             elif tt == 14:
-                m['styleType'] = self.int()
+                m['styleType'] = self.int_()
             elif tt == 15:
-                m['liveAssistantType'] = self.int()
+                m['liveAssistantType'] = self.int_()
             elif tt == 16:
                 m['deviceHash'] = self.string()
             elif tt == 17:
@@ -197,7 +206,7 @@ class MessageDecode:
         self.buf = self.message['payload']
         length = len(self.buf)
         while self.pos < length:
-            t = self.int()
+            t = self.int_()
             tt = t >> 3
             if tt == 1:
                 self.message['displayWatchingCount'] = self.string()
@@ -208,11 +217,11 @@ class MessageDecode:
             elif tt == 5:
                 if not self.message.get('user'):
                     self.message['user'] = []
-                self.message['user'].append(self.comment_decode(self.buf, self.int()))
+                self.message['user'].append(self.comment_decode(self.buf, self.int_()))
             elif tt == 9:  # 礼物
                 if not self.message.get('gift'):
                     self.message['gift'] = []
-                self.message['gift'].append(self.gift_decode(self.buf, self.int()))
+                self.message['gift'].append(self.gift_decode(self.buf, self.int_()))
 
 
 if __name__ == '__main__':

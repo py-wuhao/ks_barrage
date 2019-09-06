@@ -10,13 +10,14 @@ except ImportError:
     import _thread as thread
 import time
 
+
 def get_page_id():
     charset = "bjectSymhasOwnProp-0123456789ABCDEFGHIJKLMNQRTUVWXYZ_dfgiklquvxz"
     page_id = ''
     for _ in range(0, 16):
         page_id += random.choice(charset)
     page_id += "_"
-    page_id += str(int(time.time()*1000))
+    page_id += str(int(time.time() * 1000))
     return page_id
 
 
@@ -46,7 +47,7 @@ def on_open(ws):
     token = "oobhv8gqySwoX93lhC+54lnNGE82yNFqH0BIy+Qe/HMMwettAiCOFwLEwkHQzv/Khhxtm5MNOpR0syxixhAyag=="
     part2 = [ord(c) for c in token]
     part3 = [0x12, 0x0B]  #
-    stream_id = "SYqFY79NuZA"
+    stream_id = "pJpiGQrUiEc"
     part4 = [ord(c) for c in stream_id]
     part5 = [0x3A, 0x1E]
     page_id = get_page_id()
@@ -56,10 +57,18 @@ def on_open(ws):
     ws.send(d, websocket.ABNF.OPCODE_BINARY)
 
     def run():
-        time.sleep(2)
-        ws.send([8, 1, 26, 7, 8, 184, 232, 190, 199, 220, 44], 0x2)
+        while True:
+            time.sleep(20)
+            # 发送心跳-当前时间戳-毫秒
+            head = [0x08, 0x01, 0x1A, 0x07, 0x08]
+            timestamp = int(time.time() * 1000)
+            time_arr = MessageDecode.hex_(timestamp)
+            heartbeat = head + time_arr
+            ws.send(heartbeat, websocket.ABNF.OPCODE_BINARY)
 
     thread.start_new_thread(run, ())
+
+
 
 if __name__ == "__main__":
     websocket.enableTrace(False)
@@ -69,4 +78,3 @@ if __name__ == "__main__":
                                 on_close=on_close)
     ws.on_open = on_open
     ws.run_forever(skip_utf8_validation=True)
-
