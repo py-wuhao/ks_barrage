@@ -91,7 +91,7 @@ class MessageDecode:
             t += 1
             if r < 128:
                 s.append(r)
-            elif r < 191 < 224:
+            elif 191 < r < 224:
                 s.append((31 & r) << 6 | 63 & e[t])
                 t += 1
             elif 239 < r < 365:
