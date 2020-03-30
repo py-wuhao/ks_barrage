@@ -47,7 +47,7 @@ def on_open(ws):
     token = "oobhv8gqySwoX93lhC+54lnNGE82yNFqH0BIy+Qe/HMMwettAiCOFwLEwkHQzv/Khhxtm5MNOpR0syxixhAyag=="
     part2 = [ord(c) for c in token]
     part3 = [0x12, 0x0B]  #
-    stream_id = "pJpiGQrUiEc"
+    stream_id = "7ph0KDj3QsE"
     part4 = [ord(c) for c in stream_id]
     part5 = [0x3A, 0x1E]
     page_id = get_page_id()

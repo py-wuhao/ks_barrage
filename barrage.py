@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+
+
+"""
+            101: "SC_HEARTBEAT_ACK",
+            103: "SC_ERROR",
+            105: "SC_INFO",
+            300: "SC_ENTER_ROOM_ACK",
+            310: "SC_FEED_PUSH",
+            330: "SC_RED_PACK_FEED",
+            340: "SC_LIVE_WATCHING_LIST",
+            370: "SC_GUESS_OPENED",
+            371: "SC_GUESS_CLOSED",
+            412: "SC_RIDE_CHANGED",
+            441: "SC_BET_CHANGED",
+            442: "SC_BET_CLOSED"
+"""
+
+
 class MessageDecode:
     def __init__(self, buf):
         self.buf = buf
@@ -10,7 +29,7 @@ class MessageDecode:
     def int_(self):
         res = 0
         i = 0
-        while self.buf[self.pos] > 128:
+        while self.buf[self.pos] >= 128:
             res = res | (127 & self.buf[self.pos]) << 7 * i
             self.pos += 1
             i += 1
@@ -19,12 +38,12 @@ class MessageDecode:
         return res
 
     @staticmethod
-    def hex_(n: int) -> list:
+    def hex_(n):
         res = []
         while n > 128:
-            res.append((n & 127) | 128)
+            res.append(int((n & 127) | 128))
             n = n >> 7
-        res.append(n)
+        res.append(int(n))
         return res
 
     def bytes(self):
@@ -35,10 +54,14 @@ class MessageDecode:
         self.pos += e
         return res
 
-    def skip(self, e=0):
+    def skip(self, e=None):
         """跳过多少字节"""
-        if e == 0:
-            self.pos = len(self.buf) - 1
+        if e is None:
+            while self.pos < len(self.buf):
+                if 128 & self.buf[self.pos] == 0:
+                    self.pos += 1
+                    return
+                self.pos += 1
             return
         self.pos += e
         if self.pos >= len(self.buf):
@@ -135,6 +158,24 @@ class MessageDecode:
                 self.skipType(t & 7)
         return m
 
+    def web_like_feed_decode(self, r, l):
+        c = self.pos + l
+        m = {}
+        while self.pos < c:
+            t = self.int_()
+            tt = t >> 3
+            if tt == 1:
+                m['id'] = self.string()
+            elif tt == 2:
+                m['user'] = self.user_info_decode(self.buf, self.int_())
+            elif tt == 3:
+                m['sortRank'] = self.int_()
+            elif tt == 4:
+                m['deviceHash'] = self.string()
+            else:
+                self.skipType(t & 7)
+        return m
+
     def comment_decode(self, r, l):
         c = self.pos + l
         m = {}
@@ -153,6 +194,8 @@ class MessageDecode:
                 m['sortRank'] = self.int_()
             elif tt == 6:
                 m['color'] = self.string()
+            elif tt ==7:
+                m['showType']=self.int_()
             else:
                 self.skipType(t & 7)
         return m
@@ -218,37 +261,15 @@ class MessageDecode:
                 if not self.message.get('user'):
                     self.message['user'] = []
                 self.message['user'].append(self.comment_decode(self.buf, self.int_()))
+
+            elif tt==6:
+                self.string()
+            elif tt==8:
+                self.web_like_feed_decode(self.buf, self.int_())
+
             elif tt == 9:  # 礼物
                 if not self.message.get('gift'):
                     self.message['gift'] = []
                 self.message['gift'].append(self.gift_decode(self.buf, self.int_()))
 
 
-if __name__ == '__main__':
-    m = {"0": 8, "1": 182, "2": 2, "3": 16, "4": 1, "5": 26, "6": 162, "7": 1, "8": 10, "9": 4, "10": 50, "11": 48,
-         "12": 48, "13": 43, "14": 18, "15": 4, "16": 49, "17": 54, "18": 55, "19": 50, "20": 74, "21": 76, "22": 18,
-         "23": 30, "24": 10, "25": 11, "26": 115, "27": 49, "28": 48, "29": 49, "30": 54, "31": 57, "32": 55, "33": 56,
-         "34": 48, "35": 51, "36": 48, "37": 18, "38": 15, "39": 230, "40": 136, "41": 145, "42": 239, "43": 188,
-         "44": 140, "45": 232, "46": 142, "47": 177, "48": 239, "49": 188, "50": 140, "51": 228, "52": 185, "53": 159,
-         "54": 32, "55": 164, "56": 1, "57": 50, "58": 15, "59": 49, "60": 52, "61": 49, "62": 53, "63": 48, "64": 55,
-         "65": 54, "66": 54, "67": 54, "68": 45, "69": 54, "70": 48, "71": 48, "72": 55, "73": 50, "74": 56, "75": 1,
-         "76": 64, "77": 1, "78": 72, "79": 1, "80": 80, "81": 224, "82": 167, "83": 18, "84": 96, "85": 232, "86": 7,
-         "87": 130, "88": 1, "89": 8, "90": 68, "91": 82, "92": 111, "93": 67, "94": 70, "95": 119, "96": 61, "97": 61,
-         "98": 74, "99": 70, "100": 18, "101": 24, "102": 10, "103": 11, "104": 68, "105": 68, "106": 55, "107": 53,
-         "108": 51, "109": 49, "110": 49, "111": 52, "112": 55, "113": 56, "114": 52, "115": 18, "116": 9, "117": 230,
-         "118": 136, "119": 180, "120": 230, "121": 157, "122": 177, "123": 230, "124": 157, "125": 177, "126": 32,
-         "127": 164, "128": 1, "129": 50, "130": 15, "131": 55, "132": 53, "133": 51, "134": 49, "135": 49, "136": 52,
-         "137": 55, "138": 56, "139": 52, "140": 45, "141": 49, "142": 48, "143": 54, "144": 53, "145": 51, "146": 56,
-         "147": 1, "148": 64, "149": 1, "150": 72, "151": 1, "152": 80, "153": 224, "154": 167, "155": 18, "156": 96,
-         "157": 232, "158": 7, "159": 130, "160": 1, "161": 8, "162": 56, "163": 47, "164": 106, "165": 43, "166": 89,
-         "167": 103, "168": 61, "169": 61, "170": 32, "171": 240, "172": 218, "173": 176, "174": 165, "175": 207,
-         "176": 45}
-    message = MessageDecode(list(m.values()))
-    if message.decode():
-        message.feed_decode()
-        if message.message.get('gift'):
-            print('收到礼物：')
-            print(message.message.get('gift'))
-        elif message.message.get('user'):
-            print('收到弹幕：')
-            print(message.message.get('user'))
