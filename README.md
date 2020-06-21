@@ -1,3 +1,4 @@
+# 注意： 要安装  websocket-client
 ### 逆向快手直播弹幕协议
 
 1. 建立websocket连接
